@@ -2,16 +2,22 @@ package com.seyda.jobtracker.user;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
-@Table(name = "users") // "user" PostgreSQL'de ayrılmış bir kelime olabileceği için "users" yapıyoruz.
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,9 +32,46 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Veritabanına ilk kaydedilmeden hemen önce createdAt tarihini otomatik atar.
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    // --- UserDetails Metotları ---
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // MVP olduğu için şimdilik herkesi standart "USER" rolüyle tanımlıyoruz
+        return List.of(new SimpleGrantedAuthority("USER"));
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email; // Bizim sistemimizde kullanıcı adı yerine e-posta kullanılıyor
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
