@@ -29,28 +29,33 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
+        
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
+        
+        // DEBUG LOG 1
+        System.out.println("1. Gelen Header: " + authHeader);
 
-        // İstek başlığında token yoksa veya "Bearer " ile başlamıyorsa diğer filtrelere geç
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // DEBUG LOG 2
+            System.out.println("2. Token bulunamadı veya Bearer formatı yanlış.");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // "Bearer " kelimesi 7 karakter olduğu için 7. indeksten sonrasını alıyoruz (sadece token)
-        jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
+        final String jwt = authHeader.substring(7);
+        final String userEmail = jwtService.extractUsername(jwt);
+        
+        // DEBUG LOG 3
+        System.out.println("3. Token'dan çıkarılan Email: " + userEmail);
 
-        // Token'dan e-posta çıktıysa ve kullanıcı henüz sisteme giriş yapmamışsa (context boşsa)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            boolean isValid = jwtService.isTokenValid(jwt, userDetails);
+            
+            // DEBUG LOG 4
+            System.out.println("4. Token geçerlilik durumu: " + isValid);
 
-            // Token geçerliyse kullanıcıyı sisteme "Giriş Yaptı" olarak işaretle
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            if (isValid) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -59,12 +64,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
-                // Güvenlik bağlamına (context) kullanıcıyı yerleştir
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                
+                // DEBUG LOG 5
+                System.out.println("5. Kullanıcı başarıyla doğrulandı ve Context'e eklendi.");
             }
         }
         
-        // İşlem bittikten sonra isteği yoluna devam ettir
         filterChain.doFilter(request, response);
     }
 }
