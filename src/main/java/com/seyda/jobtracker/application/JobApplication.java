@@ -25,18 +25,35 @@ public class JobApplication {
     @Column(nullable = false)
     private String position;
 
+    @Enumerated(EnumType.STRING)
+    private ApplicationType applicationType;
+
+    @Enumerated(EnumType.STRING)
+    private WorkMode workMode;
+
+    private String location;
+    private String salary;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    // YENİ: Başvuru sırasında sorulan özel sorular ve cevapların (TEXT)
+    @Column(columnDefinition = "TEXT")
+    private String applicationQuestions;
+
+    // YENİ: Başvurulan platform (LinkedIn, Kariyer.net veya Özel Link)
+    private String platform;
+
     @Column(nullable = false)
     private LocalDate applicationDate;
 
-    // Veritabanına 0, 1, 2 diye değil, direkt APPLIED, INTERVIEW şeklinde string olarak kaydeder
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplicationStatus status;
 
-    @Column(length = 1000) // Notlar uzun olabilir
+    @Column(columnDefinition = "TEXT")
     private String notes;
 
-    // Her başvurunun bir sahibi (Kullanıcısı) olmak zorundadır
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

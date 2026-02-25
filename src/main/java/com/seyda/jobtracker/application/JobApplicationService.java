@@ -19,10 +19,17 @@ public class JobApplicationService {
         JobApplication application = JobApplication.builder()
                 .companyName(request.getCompanyName())
                 .position(request.getPosition())
+                .applicationType(request.getApplicationType())
+                .workMode(request.getWorkMode())
+                .location(request.getLocation())
+                .salary(request.getSalary())
+                .description(request.getDescription())
+                .applicationQuestions(request.getApplicationQuestions()) // Yeni
+                .platform(request.getPlatform())                         // Yeni
                 .applicationDate(request.getApplicationDate())
                 .status(request.getStatus())
                 .notes(request.getNotes())
-                .user(user) // Başvuruyu giriş yapan kullanıcıya bağlıyoruz
+                .user(user)
                 .build();
 
         JobApplication savedApplication = repository.save(application);
@@ -40,13 +47,19 @@ public class JobApplicationService {
         JobApplication application = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Başvuru bulunamadı!"));
 
-        // Güvenlik Kontrolü: Bu başvuru gerçekten isteği atan kullanıcıya mı ait?
         if (!application.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Bu başvuruyu güncelleme yetkiniz yok!");
         }
 
         application.setCompanyName(request.getCompanyName());
         application.setPosition(request.getPosition());
+        application.setApplicationType(request.getApplicationType());
+        application.setWorkMode(request.getWorkMode());
+        application.setLocation(request.getLocation());
+        application.setSalary(request.getSalary());
+        application.setDescription(request.getDescription());
+        application.setApplicationQuestions(request.getApplicationQuestions()); // Yeni
+        application.setPlatform(request.getPlatform());                         // Yeni
         application.setApplicationDate(request.getApplicationDate());
         application.setStatus(request.getStatus());
         application.setNotes(request.getNotes());
@@ -59,7 +72,6 @@ public class JobApplicationService {
         JobApplication application = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Başvuru bulunamadı!"));
 
-        // Güvenlik Kontrolü: Bu başvuru gerçekten isteği atan kullanıcıya mı ait?
         if (!application.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Bu başvuruyu silme yetkiniz yok!");
         }
@@ -67,12 +79,18 @@ public class JobApplicationService {
         repository.delete(application);
     }
 
-    // Entity'yi DTO'ya çeviren yardımcı metodumuz
     private JobApplicationResponse mapToResponse(JobApplication application) {
         return JobApplicationResponse.builder()
                 .id(application.getId())
                 .companyName(application.getCompanyName())
                 .position(application.getPosition())
+                .applicationType(application.getApplicationType())
+                .workMode(application.getWorkMode())
+                .location(application.getLocation())
+                .salary(application.getSalary())
+                .description(application.getDescription())
+                .applicationQuestions(application.getApplicationQuestions()) // Yeni
+                .platform(application.getPlatform())                         // Yeni
                 .applicationDate(application.getApplicationDate())
                 .status(application.getStatus())
                 .notes(application.getNotes())
