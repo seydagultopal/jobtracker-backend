@@ -30,45 +30,40 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         
-        final String authHeader = request.getHeader("Authorization");
-        
-        // DEBUG LOG 1
-        System.out.println("1. Gelen Header: " + authHeader);
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // DEBUG LOG 2
-            System.out.println("2. Token bulunamadı veya Bearer formatı yanlış.");
+        // 403 HATASI ÇÖZÜMÜ: Eğer istek /auth/ (login, register vb.) ile başlıyorsa JWT kontrolünü atla
+        if (request.getServletPath().contains("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String userEmail = jwtService.extractUsername(jwt);
-        
-        // DEBUG LOG 3
-        System.out.println("3. Token'dan çıkarılan Email: " + userEmail);
+        final String authHeader = request.getHeader("Authorization");
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            boolean isValid = jwtService.isTokenValid(jwt, userDetails);
-            
-            // DEBUG LOG 4
-            System.out.println("4. Token geçerlilik durumu: " + isValid);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            if (isValid) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+        try {
+            final String jwt = authHeader.substring(7);
+            final String userEmail = jwtService.extractUsername(jwt);
+
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
                 
-                // DEBUG LOG 5
-                System.out.println("5. Kullanıcı başarıyla doğrulandı ve Context'e eklendi.");
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            System.out.println("JWT İşlem Hatası: " + e.getMessage());
         }
         
         filterChain.doFilter(request, response);

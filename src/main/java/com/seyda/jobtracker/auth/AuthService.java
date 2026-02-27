@@ -27,12 +27,11 @@ public class AuthService {
 
         User user = User.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword())) // Şifreyi hashleyerek kaydediyoruz
+                .password(passwordEncoder.encode(request.getPassword())) 
                 .build();
 
         userRepository.save(user);
 
-        // Kullanıcı kaydedildikten sonra hemen token üretiyoruz
         String jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder()
                 .token(jwtToken)
@@ -40,13 +39,10 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Spring Security bizim yerimize e-posta ve şifrenin eşleşip eşleşmediğini kontrol eder
-        // Eğer yanlışsa burada exception fırlatır ve kod aşağıya inmez
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // Şifre doğruysa kullanıcıyı veritabanından çek ve token üret
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
@@ -56,12 +52,10 @@ public class AuthService {
                 .build();
     }
 
-    // YENİ EKLENEN: Şifre Sıfırlama Metodu
     public void resetPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Bu mail adresine ait kullanıcı bulunamadı"));
         
-        // Yeni şifreyi BCrypt ile şifreleyerek kaydediyoruz
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
