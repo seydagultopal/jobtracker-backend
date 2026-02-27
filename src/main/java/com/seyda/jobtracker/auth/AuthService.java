@@ -55,4 +55,14 @@ public class AuthService {
                 .token(jwtToken)
                 .build();
     }
+
+    // YENİ EKLENEN: Şifre Sıfırlama Metodu
+    public void resetPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Bu mail adresine ait kullanıcı bulunamadı"));
+        
+        // Yeni şifreyi BCrypt ile şifreleyerek kaydediyoruz
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

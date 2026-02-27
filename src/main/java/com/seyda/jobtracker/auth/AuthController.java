@@ -26,4 +26,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    // YENİ EKLENEN: Şifre sıfırlama ucu (JSON dönecek şekilde ayarlandı)
+    @PostMapping("/reset-password")
+    public ResponseEntity<java.util.Map<String, String>> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        authService.resetPassword(request.get("email"), request.get("newPassword"));
+        // Axios'un hata vermemesi için düz String yerine JSON objesi (Map) dönüyoruz.
+        return ResponseEntity.ok(java.util.Map.of("message", "Şifre başarıyla güncellendi"));
+    }
 }
