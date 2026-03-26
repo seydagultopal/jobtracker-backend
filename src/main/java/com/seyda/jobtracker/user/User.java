@@ -29,6 +29,30 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    private String firstName;
+    private String lastName;
+    private String phone;
+    private String location;
+    private String title;
+    
+    private String linkedin;
+    private String github;
+    
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+    
+    @Column(columnDefinition = "TEXT")
+    private String photo;
+
+    @Column(columnDefinition = "TEXT")
+    private String coverPhoto; 
+
+    @Column(columnDefinition = "TEXT")
+    private String experiences;
+
+    @Column(columnDefinition = "TEXT")
+    private String educations;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -37,11 +61,8 @@ public class User implements UserDetails {
         this.createdAt = LocalDateTime.now();
     }
 
-    // --- UserDetails Metotları ---
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // MVP olduğu için şimdilik herkesi standart "USER" rolüyle tanımlıyoruz
         return List.of(new SimpleGrantedAuthority("USER"));
     }
 
@@ -52,7 +73,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email; // Bizim sistemimizde kullanıcı adı yerine e-posta kullanılıyor
+        return email;
     }
 
     @Override

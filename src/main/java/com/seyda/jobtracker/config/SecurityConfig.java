@@ -26,26 +26,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults()) // CORS ayarlarını devreye aldık
+            .cors(Customizer.withDefaults()) 
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll() 
+                // HATA BURADAYDI: "/auth/**" yerine "/api/auth/**" olmalıydı!
+                .requestMatchers("/api/auth/**").permitAll() 
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            // JWT Filtremizi Spring Security doğrulama işleminden hemen önce çalışacak şekilde ekliyoruz
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // React uygulamasından gelecek isteklere izin veren CORS ayarımız
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // React'in çalışabileceği muhtemel portları ekliyoruz (5173 veya 5174)
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));

@@ -3,37 +3,54 @@ package com.seyda.jobtracker.auth;
 import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
+import com.seyda.jobtracker.user.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            userService.registerUser(request);
+            return ResponseEntity.ok(Map.of("message", "Kayıt işlemi başarıyla tamamlandı!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponse> authenticate(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.authenticate(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            authService.forgotPassword(request.get("email"));
+            return ResponseEntity.ok(Map.of("message", "Şifre sıfırlama maili gönderildi!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<java.util.Map<String, String>> resetPassword(@RequestBody java.util.Map<String, String> request) {
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         try {
-            authService.resetPassword(request.get("email"), request.get("newPassword"));
-            return ResponseEntity.ok(java.util.Map.of("message", "Şifre başarıyla güncellendi"));
+            authService.resetPassword(request.get("token"), request.get("newPassword"));
+            return ResponseEntity.ok(Map.of("message", "Şifreniz başarıyla yenilendi!"));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(java.util.Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }
