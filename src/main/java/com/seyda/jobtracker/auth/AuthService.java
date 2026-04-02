@@ -5,6 +5,7 @@ import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.user.User;
 import com.seyda.jobtracker.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,11 +23,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    
-    // Şifre sıfırlama işlemleri için eklenen bağımlılıklar
     private final PasswordResetTokenRepository tokenRepository;
-    private final EmailService emailService;
-
+    
+    // ÇÖZÜM: Spring Boot'un otomatik oluşturduğu tipe (<Object, Object>) uygun hale getirdik.
+    private final KafkaTemplate<Object, Object> kafkaTemplate;
     public AuthResponse authenticate(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -36,9 +36,9 @@ public class AuthService {
         );
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        
+
         var jwtToken = jwtService.generateToken(user);
-        
+
         return AuthResponse.builder()
                 .token(jwtToken)
                 .build();
@@ -49,21 +49,22 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Bu e-posta ile kayıtlı kullanıcı bulunamadı."));
 
-        // Kullanıcının daha önceden kalma bir şifre sıfırlama isteği varsa temizle
-        tokenRepository.deleteByUser_Id(user.getId());
-
-        // Yeni token oluştur
         String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(15)) // 15 dakika geçerli
-                .build();
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(15);
+
+        PasswordResetToken resetToken = tokenRepository.findByUser(user)
+                .orElse(PasswordResetToken.builder().user(user).build());
+
+        resetToken.setToken(token);
+        resetToken.setExpiryDate(expiry);
 
         tokenRepository.save(resetToken);
-        
-        // Maili gönder
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+
+        // Kafka'ya mesaj bırakıyoruz
+        PasswordResetEvent event = new PasswordResetEvent(user.getEmail(), token);
+        kafkaTemplate.send("password-reset-topic", event);
+
+        System.out.println("Kafka'ya mesaj bırakıldı: " + user.getEmail());
     }
 
     @Transactional
@@ -79,8 +80,7 @@ public class AuthService {
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        
-        // İşlem başarıyla bitince güvenliği sağlamak için token'ı veritabanından sil
+
         tokenRepository.delete(resetToken);
     }
 }
