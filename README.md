@@ -249,7 +249,7 @@ The `users` table also stores profile and CV fields such as contact details, bio
 **Important hardening work is still required before real-world use:**
 
 1. A mail credential was committed in the application configuration. Revoke/rotate it immediately; removing it from the latest file does not remove it from Git history.
-2. The JWT signing key is hard-coded in `JwtService`. Move it to a secret/environment-based configuration and rotate it.
+2. The JWT signing key is loaded from the `JWT_SECRET` environment variable. Keep this value private and rotate it if it has ever been exposed.
 3. Registration currently assigns the submitted password directly instead of using the configured `PasswordEncoder`. Fix this before allowing registrations; passwords must be stored as adaptive hashes.
 4. The profile controller returns the `User` entity directly, including its password property. Return a dedicated response DTO that never serializes credentials.
 5. The frontend currently calls `/auth/register`, while the backend mapping is `/api/auth/register`. Align the paths before testing the registration flow.
@@ -278,7 +278,7 @@ services:
     environment:
       POSTGRES_DB: jobtracker_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment}
     ports:
       - "5432:5432"
     volumes:
@@ -302,6 +302,8 @@ services:
 volumes:
   jobtracker-postgres-data:
 ```
+
+Before starting the services, set `DB_PASSWORD` in your shell environment to a strong local development password. Compose reads this variable and will stop with an error if it is missing.
 
 Start the services:
 
@@ -347,14 +349,14 @@ docker run --rm -p 8080:8080 \
   --add-host=host.docker.internal:host-gateway \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/jobtracker_db \
   -e SPRING_DATASOURCE_USERNAME=postgres \
-  -e SPRING_DATASOURCE_PASSWORD=postgres \
+  -e DB_PASSWORD="$DB_PASSWORD" \
+  -e JWT_SECRET="$JWT_SECRET" \
   -e SPRING_KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092 \
-  -e SPRING_MAIL_USERNAME=your-smtp-account@example.com \
-  -e SPRING_MAIL_PASSWORD=your-smtp-app-password \
+  -e MAIL_PASSWORD="$MAIL_PASSWORD" \
   jobtracker-backend
 ```
 
-These are development examples, not production secrets. The JWT signing key is still hard-coded in the current implementation and must be externalized before deployment.
+Set `DB_PASSWORD`, `JWT_SECRET`, and `MAIL_PASSWORD` in your shell before running this command; do not paste their actual values into the README or commit them. The application reads these secrets from environment variables. The example assumes PostgreSQL and Kafka are already running and reachable from the container.
 
 ## Tests
 
@@ -371,7 +373,7 @@ The current test suite contains a Spring application-context smoke test. Service
 - No production deployment configuration or complete Docker Compose setup is committed yet.
 - Database schema uses Hibernate `update`; a migration tool such as Flyway is not configured.
 - Automated tests currently cover only application-context startup.
-- Registration password hashing, response DTOs for user profiles, and secret management need to be fixed.
+- Registration password hashing and response DTOs for user profiles still need to be fixed.
 - The frontend registration URL does not currently match the backend route.
 - Error responses and HTTP status mapping should be standardized, and API validation/authorization tests should be expanded.
 
