@@ -366,16 +366,6 @@ Run the existing backend test suite:
 
 The current test suite contains a Spring application-context smoke test. Service, controller, authentication, and cross-user authorization tests are still needed; test coverage should not be interpreted as comprehensive.
 
-## Screenshots
-
-Screenshots are not included in this repository yet. Add sanitized screenshots (no personal data or tokens) under a directory such as `docs/screenshots/` and embed them here, for example:
-
-```md
-![Dashboard](docs/screenshots/dashboard.png)
-![Application tracker](docs/screenshots/tracker.png)
-![Calendar and agenda](docs/screenshots/calendar.png)
-```
-
 ## Known limitations
 
 - No production deployment configuration or complete Docker Compose setup is committed yet.
