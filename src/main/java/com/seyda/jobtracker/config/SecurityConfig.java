@@ -33,6 +33,7 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf
                 .csrfTokenRepository(csrfTokenRepository)
+                .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
