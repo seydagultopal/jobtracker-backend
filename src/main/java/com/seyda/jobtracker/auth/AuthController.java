@@ -4,7 +4,6 @@ import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
 import com.seyda.jobtracker.user.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +50,22 @@ public class AuthController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, authCookie.toString())
+                .build();
+    }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        ResponseCookie expiredCookie = ResponseCookie.from("PEBBLE_AUTH", "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ZERO)
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
                 .build();
     }
 
