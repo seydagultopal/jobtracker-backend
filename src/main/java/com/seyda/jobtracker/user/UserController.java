@@ -15,13 +15,14 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<User> getMyProfile(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(userService.getUserProfile(user.getId()));
+    public ResponseEntity<UserProfileResponse> getMyProfile(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(UserProfileResponse.from(userService.getUserProfile(user.getId())));
     }
 
     @PutMapping("/me")
-    public ResponseEntity<User> updateMyProfile(@AuthenticationPrincipal User user, @RequestBody User updatedData) {
-        return ResponseEntity.ok(userService.updateProfile(user.getId(), updatedData));
+    public ResponseEntity<UserProfileResponse> updateMyProfile(@AuthenticationPrincipal User user, @RequestBody User updatedData) {
+        User updatedUser = userService.updateProfile(user.getId(), updatedData);
+        return ResponseEntity.ok(UserProfileResponse.from(updatedUser));
     }
 
     // YENİ EKLENEN GÜVENLİ E-POSTA GÜNCELLEME ENDPOINT'I
