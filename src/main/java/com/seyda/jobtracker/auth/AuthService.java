@@ -69,6 +69,13 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Sıfırlama token'ı boş olamaz");
+        }
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
+            throw new IllegalArgumentException("Şifre en az 8 karakter olmalıdır");
+        }
+
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Geçersiz veya süresi dolmuş link!"));
 
