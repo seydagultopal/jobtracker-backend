@@ -9,6 +9,7 @@ import com.seyda.jobtracker.user.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -90,6 +92,7 @@ public class AuthController {
             authService.forgotPassword(request.get("email"));
         } catch (RuntimeException e) {
             // Do not reveal account existence or internal delivery failures to the caller.
+            log.warn("Password reset request could not be processed");
         }
         return ResponseEntity.ok(Map.of(
                 "message",
