@@ -84,6 +84,12 @@ public class AuthService {
     }
 
     @Transactional
+    public void revokeTokens(User user) {
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = tokenRepository.findByToken(hashResetToken(token))
                 .orElseThrow(() -> new RuntimeException("Geçersiz veya süresi dolmuş link!"));
@@ -95,6 +101,7 @@ public class AuthService {
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
