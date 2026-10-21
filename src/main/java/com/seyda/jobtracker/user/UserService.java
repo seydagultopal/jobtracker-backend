@@ -3,7 +3,9 @@ package com.seyda.jobtracker.user;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -15,7 +17,7 @@ public class UserService {
 
     public User registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Bu e-posta adresi zaten kullanımda: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Bu e-posta adresi zaten kullanımda.");
         }
         
         User user = User.builder()
