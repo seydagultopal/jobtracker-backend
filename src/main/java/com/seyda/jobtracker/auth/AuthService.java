@@ -24,9 +24,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository tokenRepository;
-    
-    // ÇÖZÜM: Spring Boot'un otomatik oluşturduğu tipe (<Object, Object>) uygun hale getirdik.
     private final KafkaTemplate<Object, Object> kafkaTemplate;
+
     public AuthResponse authenticate(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -46,9 +45,14 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Bu e-posta ile kayıtlı kullanıcı bulunamadı."));
+        // Return the same public response for known and unknown addresses to avoid
+        // exposing whether an account exists.
+        var userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return;
+        }
 
+        User user = userOptional.get();
         String token = UUID.randomUUID().toString();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(15);
 
@@ -60,11 +64,8 @@ public class AuthService {
 
         tokenRepository.save(resetToken);
 
-        // Kafka'ya mesaj bırakıyoruz
         PasswordResetEvent event = new PasswordResetEvent(user.getEmail(), token);
         kafkaTemplate.send("password-reset-topic", event);
-
-        System.out.println("Kafka'ya mesaj bırakıldı: " + user.getEmail());
     }
 
     @Transactional
