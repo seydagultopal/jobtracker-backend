@@ -3,6 +3,7 @@ package com.seyda.jobtracker.auth;
 import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
+import com.seyda.jobtracker.auth.dto.ResetPasswordRequest;
 import com.seyda.jobtracker.user.UserService;
 import com.seyda.jobtracker.user.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -97,9 +98,9 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
-            authService.resetPassword(request.get("token"), request.get("newPassword"));
+            authService.resetPassword(request.getToken(), request.getNewPassword());
             return ResponseEntity.ok(Map.of("message", "Şifreniz başarıyla yenilendi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
