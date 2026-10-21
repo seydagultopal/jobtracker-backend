@@ -1,6 +1,7 @@
 package com.seyda.jobtracker.user;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +28,9 @@ public class UserController {
 
     // YENİ EKLENEN GÜVENLİ E-POSTA GÜNCELLEME ENDPOINT'I
     @PutMapping("/me/email")
-    public ResponseEntity<?> updateMyEmail(@AuthenticationPrincipal User user, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateMyEmail(@AuthenticationPrincipal User user, @Valid @RequestBody UpdateEmailRequest request) {
         try {
-            userService.updateEmail(user.getId(), request.get("newEmail"), request.get("currentPassword"));
+            userService.updateEmail(user.getId(), request.getNewEmail(), request.getCurrentPassword());
             return ResponseEntity.ok(Map.of("message", "E-posta başarıyla güncellendi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -37,9 +38,9 @@ public class UserController {
     }
 
     @PutMapping("/me/password")
-    public ResponseEntity<?> updateMyPassword(@AuthenticationPrincipal User user, @RequestBody Map<String, String> passwords) {
+    public ResponseEntity<?> updateMyPassword(@AuthenticationPrincipal User user, @Valid @RequestBody UpdatePasswordRequest passwords) {
         try {
-            userService.updatePassword(user.getId(), passwords.get("currentPassword"), passwords.get("newPassword"));
+            userService.updatePassword(user.getId(), passwords.getCurrentPassword(), passwords.getNewPassword());
             return ResponseEntity.ok(Map.of("message", "Şifre başarıyla güncellendi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

@@ -72,6 +72,13 @@ public class UserService {
 
     @Transactional
     public void updateEmail(Long userId, String newEmail, String currentPassword) {
+        if (newEmail == null || newEmail.isBlank() || !newEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            throw new IllegalArgumentException("Geçerli bir e-posta adresi girin");
+        }
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new IllegalArgumentException("Mevcut şifre boş bırakılamaz");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
@@ -89,6 +96,13 @@ public class UserService {
 
     @Transactional
     public void updatePassword(Long userId, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new IllegalArgumentException("Mevcut şifre boş bırakılamaz");
+        }
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
+            throw new IllegalArgumentException("Şifre en az 8 karakter olmalıdır");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
