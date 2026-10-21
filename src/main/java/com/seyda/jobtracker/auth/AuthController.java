@@ -3,9 +3,13 @@ package com.seyda.jobtracker.auth;
 import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
+import com.seyda.jobtracker.auth.dto.ResetPasswordRequest;
 import com.seyda.jobtracker.user.UserService;
+import com.seyda.jobtracker.user.User;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -58,7 +63,10 @@ public class AuthController {
 
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal User user) {
+        if (user != null) {
+            authService.revokeTokens(user);
+        }
         ResponseCookie expiredCookie = ResponseCookie.from("PEBBLE_AUTH", "")
                 .httpOnly(true)
                 .secure(secureCookie)
@@ -82,16 +90,20 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         try {
             authService.forgotPassword(request.get("email"));
-            return ResponseEntity.ok(Map.of("message", "Şifre sıfırlama maili gönderildi!"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Do not reveal account existence or internal delivery failures to the caller.
+            log.warn("Password reset request could not be processed");
         }
+        return ResponseEntity.ok(Map.of(
+                "message",
+                "E-posta adresi sistemde kayıtlıysa şifre sıfırlama bağlantısı gönderilecektir."
+        ));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
-            authService.resetPassword(request.get("token"), request.get("newPassword"));
+            authService.resetPassword(request.getToken(), request.getNewPassword());
             return ResponseEntity.ok(Map.of("message", "Şifreniz başarıyla yenilendi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
