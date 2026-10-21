@@ -13,7 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class AuthService {
     
     // ÇÖZÜM: Spring Boot'un otomatik oluşturduğu tipe (<Object, Object>) uygun hale getirdik.
     private final KafkaTemplate<Object, Object> kafkaTemplate;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     public AuthResponse authenticate(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -44,6 +48,16 @@ public class AuthService {
                 .build();
     }
 
+    private String hashResetToken(String token) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
     @Transactional
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email).orElse(null);
@@ -51,13 +65,15 @@ public class AuthService {
             return;
         }
 
-        String token = UUID.randomUUID().toString();
+        byte[] tokenBytes = new byte[32];
+        SECURE_RANDOM.nextBytes(tokenBytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(15);
 
         PasswordResetToken resetToken = tokenRepository.findByUser(user)
                 .orElse(PasswordResetToken.builder().user(user).build());
 
-        resetToken.setToken(token);
+        resetToken.setToken(hashResetToken(token));
         resetToken.setExpiryDate(expiry);
 
         tokenRepository.save(resetToken);
@@ -77,7 +93,7 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+        PasswordResetToken resetToken = tokenRepository.findByToken(hashResetToken(token))
                 .orElseThrow(() -> new RuntimeException("Geçersiz veya süresi dolmuş link!"));
 
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
