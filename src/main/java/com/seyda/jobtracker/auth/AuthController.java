@@ -87,10 +87,13 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         try {
             authService.forgotPassword(request.get("email"));
-            return ResponseEntity.ok(Map.of("message", "Şifre sıfırlama maili gönderildi!"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Do not reveal account existence or internal delivery failures to the caller.
         }
+        return ResponseEntity.ok(Map.of(
+                "message",
+                "E-posta adresi sistemde kayıtlıysa şifre sıfırlama bağlantısı gönderilecektir."
+        ));
     }
 
     @PostMapping("/reset-password")
