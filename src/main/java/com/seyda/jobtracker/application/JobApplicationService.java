@@ -4,7 +4,9 @@ import com.seyda.jobtracker.application.dto.JobApplicationRequest;
 import com.seyda.jobtracker.application.dto.JobApplicationResponse;
 import com.seyda.jobtracker.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,16 +26,15 @@ public class JobApplicationService {
                 .location(request.getLocation())
                 .salary(request.getSalary())
                 .description(request.getDescription())
-                .applicationQuestions(request.getApplicationQuestions()) // Yeni
-                .platform(request.getPlatform())                         // Yeni
+                .applicationQuestions(request.getApplicationQuestions())
+                .platform(request.getPlatform())
                 .applicationDate(request.getApplicationDate())
                 .status(request.getStatus())
                 .notes(request.getNotes())
                 .user(user)
                 .build();
 
-        JobApplication savedApplication = repository.save(application);
-        return mapToResponse(savedApplication);
+        return mapToResponse(repository.save(application));
     }
 
     public List<JobApplicationResponse> getAllApplications(User user) {
@@ -45,10 +46,10 @@ public class JobApplicationService {
 
     public JobApplicationResponse updateApplication(Long id, JobApplicationRequest request, User user) {
         JobApplication application = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Başvuru bulunamadı!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Başvuru bulunamadı."));
 
         if (!application.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Bu başvuruyu güncelleme yetkiniz yok!");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu başvuruyu güncelleme yetkiniz yok.");
         }
 
         application.setCompanyName(request.getCompanyName());
@@ -58,22 +59,21 @@ public class JobApplicationService {
         application.setLocation(request.getLocation());
         application.setSalary(request.getSalary());
         application.setDescription(request.getDescription());
-        application.setApplicationQuestions(request.getApplicationQuestions()); // Yeni
-        application.setPlatform(request.getPlatform());                         // Yeni
+        application.setApplicationQuestions(request.getApplicationQuestions());
+        application.setPlatform(request.getPlatform());
         application.setApplicationDate(request.getApplicationDate());
         application.setStatus(request.getStatus());
         application.setNotes(request.getNotes());
 
-        JobApplication updatedApplication = repository.save(application);
-        return mapToResponse(updatedApplication);
+        return mapToResponse(repository.save(application));
     }
 
     public void deleteApplication(Long id, User user) {
         JobApplication application = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Başvuru bulunamadı!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Başvuru bulunamadı."));
 
         if (!application.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Bu başvuruyu silme yetkiniz yok!");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bu başvuruyu silme yetkiniz yok.");
         }
 
         repository.delete(application);
@@ -89,8 +89,8 @@ public class JobApplicationService {
                 .location(application.getLocation())
                 .salary(application.getSalary())
                 .description(application.getDescription())
-                .applicationQuestions(application.getApplicationQuestions()) // Yeni
-                .platform(application.getPlatform())                         // Yeni
+                .applicationQuestions(application.getApplicationQuestions())
+                .platform(application.getPlatform())
                 .applicationDate(application.getApplicationDate())
                 .status(application.getStatus())
                 .notes(application.getNotes())
