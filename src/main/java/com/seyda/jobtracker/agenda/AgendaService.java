@@ -47,7 +47,10 @@ public class AgendaService {
         // Frontend'den yeni gelen maddeleri sırayla ekleyip Ajanda ile bağlıyoruz
         if (request.getTodos() != null) {
             for (TodoItem item : request.getTodos()) {
-                item.setAgenda(agenda); // Bu satır kritik: İlişkiyi veritabanına bildirir
+                // dbId is the database primary key and must never be trusted from the client.
+                // Otherwise a crafted request could attempt to attach/update another agenda's row.
+                item.setDbId(null);
+                item.setAgenda(agenda);
                 agenda.getTodos().add(item);
             }
         }
