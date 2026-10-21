@@ -60,8 +60,10 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Bu e-posta ile kayıtlı kullanıcı bulunamadı."));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return;
+        }
 
         byte[] tokenBytes = new byte[32];
         SECURE_RANDOM.nextBytes(tokenBytes);
