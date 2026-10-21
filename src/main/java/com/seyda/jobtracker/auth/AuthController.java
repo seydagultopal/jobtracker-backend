@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Void> authenticate(@RequestBody LoginRequest request) {
+    public ResponseEntity<Void> authenticate(@Valid @RequestBody LoginRequest request) {
         AuthResponse authResponse = authService.authenticate(request);
         ResponseCookie authCookie = ResponseCookie.from("PEBBLE_AUTH", authResponse.getToken())
                 .httpOnly(true)
