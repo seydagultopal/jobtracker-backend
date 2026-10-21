@@ -4,6 +4,8 @@ import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
 import com.seyda.jobtracker.user.UserService;
+import com.seyda.jobtracker.user.User;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +60,10 @@ public class AuthController {
 
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal User user) {
+        if (user != null) {
+            authService.revokeTokens(user);
+        }
         ResponseCookie expiredCookie = ResponseCookie.from("PEBBLE_AUTH", "")
                 .httpOnly(true)
                 .secure(secureCookie)
