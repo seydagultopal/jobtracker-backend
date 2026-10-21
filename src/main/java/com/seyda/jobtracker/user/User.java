@@ -53,6 +53,10 @@ public class User implements UserDetails {
     @Column(columnDefinition = "TEXT")
     private String educations;
 
+    @Column(name = "token_version", nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
