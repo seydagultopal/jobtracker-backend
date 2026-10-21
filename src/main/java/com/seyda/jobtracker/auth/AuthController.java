@@ -3,6 +3,8 @@ package com.seyda.jobtracker.auth;
 import com.seyda.jobtracker.auth.dto.AuthResponse;
 import com.seyda.jobtracker.auth.dto.LoginRequest;
 import com.seyda.jobtracker.auth.dto.RegisterRequest;
+import com.seyda.jobtracker.auth.dto.ForgotPasswordRequest;
+import com.seyda.jobtracker.auth.dto.ResetPasswordRequest;
 import com.seyda.jobtracker.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -79,9 +81,9 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
-            authService.forgotPassword(request.get("email"));
+            authService.forgotPassword(request.getEmail());
             return ResponseEntity.ok(Map.of("message", "Şifre sıfırlama maili gönderildi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -89,9 +91,9 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
-            authService.resetPassword(request.get("token"), request.get("newPassword"));
+            authService.resetPassword(request.getToken(), request.getNewPassword());
             return ResponseEntity.ok(Map.of("message", "Şifreniz başarıyla yenilendi!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
