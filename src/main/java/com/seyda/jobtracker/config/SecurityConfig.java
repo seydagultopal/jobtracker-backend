@@ -1,14 +1,14 @@
 package com.seyda.jobtracker.config;
 
-import com.seyda.jobtracker.auth.JwtFilter;
 import com.seyda.jobtracker.auth.GoogleOAuth2SuccessHandler;
+import com.seyda.jobtracker.auth.JwtFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,7 +31,6 @@ public class SecurityConfig {
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
-    private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -56,11 +55,8 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(googleOAuth2SuccessHandler)
-                .failureHandler((request, response, exception) -> response.sendRedirect("http://localhost:5173/login?oauthError=failed"))
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(googleOAuth2SuccessHandler)
-                .failureHandler((request, response, exception) -> response.sendRedirect(frontendUrl.replaceAll("/+$", "") + "/login?oauthError=failed"))
+                .failureHandler((request, response, exception) ->
+                    response.sendRedirect(frontendUrl.replaceAll("/+$", "") + "/login?oauthError=failed"))
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
