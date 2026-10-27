@@ -48,23 +48,36 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         User user = userRepository.findByGoogleSubject(subject).orElse(null);
         if (user == null) {
-            if (userRepository.existsByEmail(email)) {
-                redirect(response, "login?oauthError=account_exists");
-                return;
-            }
-            byte[] bytes = new byte[48];
-            RANDOM.nextBytes(bytes);
-            user = User.builder().email(email)
-                    .password(passwordEncoder.encode(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)))
-                    .firstName(text(attributes, "given_name"))
-                    .lastName(text(attributes, "family_name"))
-                    .photo(text(attributes, "picture"))
-                    .authProvider("GOOGLE").googleSubject(subject).build();
-            try {
-                user = userRepository.saveAndFlush(user);
-            } catch (DataIntegrityViolationException exception) {
-                redirect(response, "login?oauthError=account_exists");
-                return;
+            // Google has verified this email. Link the identity to an existing Pebble
+            // account instead of treating a sign-in attempt as a new registration.
+            user = userRepository.findByEmail(email).orElse(null);
+            if (user != null) {
+                if (user.getGoogleSubject() != null && !user.getGoogleSubject().equals(subject)) {
+                    redirect(response, "login?oauthError=account_exists");
+                    return;
+                }
+                user.setGoogleSubject(subject);
+                try {
+                    user = userRepository.saveAndFlush(user);
+                } catch (DataIntegrityViolationException exception) {
+                    redirect(response, "login?oauthError=account_exists");
+                    return;
+                }
+            } else {
+                byte[] bytes = new byte[48];
+                RANDOM.nextBytes(bytes);
+                user = User.builder().email(email)
+                        .password(passwordEncoder.encode(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)))
+                        .firstName(text(attributes, "given_name"))
+                        .lastName(text(attributes, "family_name"))
+                        .photo(text(attributes, "picture"))
+                        .authProvider("GOOGLE").googleSubject(subject).build();
+                try {
+                    user = userRepository.saveAndFlush(user);
+                } catch (DataIntegrityViolationException exception) {
+                    redirect(response, "login?oauthError=account_exists");
+                    return;
+                }
             }
         }
 
@@ -73,6 +86,16 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 .httpOnly(true).secure(secureCookie).sameSite("Strict").path("/")
                 .maxAge(Duration.ofHours(24)).build();
         response.addHeader("Set-Cookie", cookie.toString());
+
+        // OAuth2 stores an OAuth2User in the server session. The application APIs
+        // expect the User entity loaded by JwtFilter, so end the OAuth session and
+        // let subsequent requests authenticate using the JWT cookie.
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
         redirect(response, "dashboard");
     }
 
