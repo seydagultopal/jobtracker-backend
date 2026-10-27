@@ -31,7 +31,8 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        if (request.getServletPath().contains("/auth")) {
+        if (request.getServletPath().contains("/auth")
+                && !"/api/auth/logout".equals(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -84,6 +85,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         String method = request.getMethod();
         return ("GET".equals(method) && "/api/users/me/deletion-status".equals(path))
-                || ("POST".equals(method) && "/api/users/me/reactivate".equals(path));
+                || ("POST".equals(method) && "/api/users/me/reactivate".equals(path))
+                || ("POST".equals(method) && "/api/auth/logout".equals(path));
     }
 }
