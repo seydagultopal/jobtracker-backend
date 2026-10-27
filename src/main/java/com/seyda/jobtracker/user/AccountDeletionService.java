@@ -50,7 +50,6 @@ public class AccountDeletionService {
         if (!user.isDeletionPending()) return;
         user.setDeletionRequestedAt(null);
         user.setDeletionScheduledAt(null);
-        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
     }
 
