@@ -20,13 +20,19 @@ public class UserController {
         return ResponseEntity.ok(UserProfileResponse.from(userService.getUserProfile(user.getId())));
     }
 
+    @PutMapping("/me/onboarding")
+    public ResponseEntity<UserProfileResponse> completeOnboarding(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody OnboardingRequest request) {
+        return ResponseEntity.ok(UserProfileResponse.from(userService.completeOnboarding(user.getId(), request)));
+    }
+
     @PutMapping("/me")
     public ResponseEntity<UserProfileResponse> updateMyProfile(@AuthenticationPrincipal User user, @RequestBody User updatedData) {
         User updatedUser = userService.updateProfile(user.getId(), updatedData);
         return ResponseEntity.ok(UserProfileResponse.from(updatedUser));
     }
 
-    // YENİ EKLENEN GÜVENLİ E-POSTA GÜNCELLEME ENDPOINT'I
     @PutMapping("/me/email")
     public ResponseEntity<?> updateMyEmail(@AuthenticationPrincipal User user, @Valid @RequestBody UpdateEmailRequest request) {
         try {
