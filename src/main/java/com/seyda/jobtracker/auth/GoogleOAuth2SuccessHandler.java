@@ -92,7 +92,11 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         jakarta.servlet.http.HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
 
-        redirect(response, user.isOnboardingCompleted() ? "dashboard" : "onboarding");
+        if (user.isDeletionPending()) {
+            redirect(response, "account-reactivation");
+        } else {
+            redirect(response, user.isOnboardingCompleted() ? "dashboard" : "onboarding");
+        }
     }
 
     private static String text(Map<String, Object> attributes, String key) {
