@@ -53,6 +53,13 @@ public class User implements UserDetails {
     @Column(columnDefinition = "TEXT")
     private String educations;
 
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
+    @Column(name = "google_subject", unique = true)
+    private String googleSubject;
+
     @Column(name = "token_version", nullable = false)
     @Builder.Default
     private Integer tokenVersion = 0;

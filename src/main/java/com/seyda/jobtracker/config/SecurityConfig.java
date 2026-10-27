@@ -1,7 +1,9 @@
 package com.seyda.jobtracker.config;
 
+import com.seyda.jobtracker.auth.GoogleOAuth2SuccessHandler;
 import com.seyda.jobtracker.auth.JwtFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtFilter jwtAuthFilter;
+    private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
+    @Value("${app.oauth.google.enabled:false}")
+    private boolean googleOAuthEnabled;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -41,13 +50,23 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            ;
+
+        if (googleOAuthEnabled) {
+            http.oauth2Login(oauth2 -> oauth2
+                .successHandler(googleOAuth2SuccessHandler)
+                .failureHandler((request, response, exception) ->
+                    response.sendRedirect(frontendUrl.replaceAll("/+$", "") + "/login?oauthError=failed"))
+            );
+        }
+
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
