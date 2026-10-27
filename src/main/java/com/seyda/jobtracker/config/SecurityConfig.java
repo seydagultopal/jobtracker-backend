@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,6 +29,10 @@ public class SecurityConfig {
     private final JwtFilter jwtAuthFilter;
     private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+    private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
@@ -43,7 +48,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -52,6 +57,10 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(googleOAuth2SuccessHandler)
                 .failureHandler((request, response, exception) -> response.sendRedirect("http://localhost:5173/login?oauthError=failed"))
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(googleOAuth2SuccessHandler)
+                .failureHandler((request, response, exception) -> response.sendRedirect(frontendUrl.replaceAll("/+$", "") + "/login?oauthError=failed"))
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
