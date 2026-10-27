@@ -34,18 +34,19 @@ public class User implements UserDetails {
     private String phone;
     private String location;
     private String title;
-    
+    private String careerGoal;
+
     private String linkedin;
     private String github;
-    
+
     @Column(columnDefinition = "TEXT")
     private String bio;
-    
+
     @Column(columnDefinition = "TEXT")
     private String photo;
 
     @Column(columnDefinition = "TEXT")
-    private String coverPhoto; 
+    private String coverPhoto;
 
     @Column(columnDefinition = "TEXT")
     private String experiences;
@@ -63,6 +64,10 @@ public class User implements UserDetails {
     @Column(name = "token_version", nullable = false)
     @Builder.Default
     private Integer tokenVersion = 0;
+
+    @Column(name = "onboarding_completed", nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = true;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -88,22 +93,14 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isEnabled() { return true; }
 }

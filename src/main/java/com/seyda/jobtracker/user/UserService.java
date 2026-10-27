@@ -19,20 +19,35 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bu e-posta adresi zaten kullanımda.");
         }
-        
+
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .firstName(request.getFirstName()) 
+                .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .build();
-        
+
         return userRepository.save(user);
     }
 
     public User getUserProfile(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
+    }
+
+    @Transactional
+    public User completeOnboarding(Long userId, OnboardingRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
+
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(request.lastName().trim());
+        user.setTitle(request.targetRole().trim());
+        user.setLocation(request.location() == null || request.location().isBlank()
+                ? null : request.location().trim());
+        user.setCareerGoal(request.careerGoal().trim());
+        user.setOnboardingCompleted(true);
+        return userRepository.save(user);
     }
 
     @Transactional
@@ -45,27 +60,15 @@ public class UserService {
         existingUser.setPhone(updatedData.getPhone());
         existingUser.setLocation(updatedData.getLocation());
         existingUser.setTitle(updatedData.getTitle());
-        
+        existingUser.setCareerGoal(updatedData.getCareerGoal());
         existingUser.setLinkedin(updatedData.getLinkedin());
         existingUser.setGithub(updatedData.getGithub());
-        
         existingUser.setBio(updatedData.getBio());
-        
-        if (updatedData.getPhoto() != null) {
-            existingUser.setPhoto(updatedData.getPhoto());
-        }
-        
-        if (updatedData.getCoverPhoto() != null) {
-            existingUser.setCoverPhoto(updatedData.getCoverPhoto());
-        }
 
-        // YENİ: CV Verilerini kaydet
-        if (updatedData.getExperiences() != null) {
-            existingUser.setExperiences(updatedData.getExperiences());
-        }
-        if (updatedData.getEducations() != null) {
-            existingUser.setEducations(updatedData.getEducations());
-        }
+        if (updatedData.getPhoto() != null) existingUser.setPhoto(updatedData.getPhoto());
+        if (updatedData.getCoverPhoto() != null) existingUser.setCoverPhoto(updatedData.getCoverPhoto());
+        if (updatedData.getExperiences() != null) existingUser.setExperiences(updatedData.getExperiences());
+        if (updatedData.getEducations() != null) existingUser.setEducations(updatedData.getEducations());
 
         return userRepository.save(existingUser);
     }
