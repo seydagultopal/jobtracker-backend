@@ -1,5 +1,6 @@
 package com.seyda.jobtracker.auth;
 
+import com.seyda.jobtracker.user.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,16 +30,14 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        
-        // 403 HATASI ÇÖZÜMÜ: Eğer istek /auth/ (login, register vb.) ile başlıyorsa JWT kontrolünü atla
+
         if (request.getServletPath().contains("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String authHeader = request.getHeader("Authorization");
         String jwt = null;
-
+        final String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
         } else if (request.getCookies() != null) {
@@ -57,26 +56,34 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             final String userEmail = jwtService.extractUsername(jwt);
-
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                
+                UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
                 if (jwtService.isTokenValid(jwt, userDetails)) {
+                    if (userDetails instanceof User user && user.isDeletionPending()
+                            && !isAllowedWhileDeletionPending(request)) {
+                        response.setStatus(423);
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+                        response.getWriter().write("{\"code\":\"ACCOUNT_PENDING_DELETION\",\"message\":\"Account is scheduled for deletion\"}");
+                        return;
+                    }
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception e) {
-            System.out.println("JWT İşlem Hatası: " + e.getMessage());
+            // Invalid or expired credentials are treated as unauthenticated.
         }
-        
+
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isAllowedWhileDeletionPending(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+        return ("GET".equals(method) && "/api/users/me/deletion-status".equals(path))
+                || ("POST".equals(method) && "/api/users/me/reactivate".equals(path));
     }
 }
