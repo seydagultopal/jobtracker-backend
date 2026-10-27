@@ -32,6 +32,9 @@ public class SecurityConfig {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.oauth.google.enabled:false}")
+    private boolean googleOAuthEnabled;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
@@ -53,12 +56,17 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )
-            .oauth2Login(oauth2 -> oauth2
+            ;
+
+        if (googleOAuthEnabled) {
+            http.oauth2Login(oauth2 -> oauth2
                 .successHandler(googleOAuth2SuccessHandler)
                 .failureHandler((request, response, exception) ->
                     response.sendRedirect(frontendUrl.replaceAll("/+$", "") + "/login?oauthError=failed"))
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            );
+        }
+
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
