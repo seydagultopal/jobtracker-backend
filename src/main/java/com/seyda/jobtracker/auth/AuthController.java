@@ -6,6 +6,7 @@ import com.seyda.jobtracker.auth.dto.RegisterRequest;
 import com.seyda.jobtracker.auth.dto.ResetPasswordRequest;
 import com.seyda.jobtracker.user.UserService;
 import com.seyda.jobtracker.user.User;
+import com.seyda.jobtracker.user.UserRepository;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Value("${app.cookie.secure:false}")
     private boolean secureCookie;
@@ -46,8 +48,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Void> authenticate(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> authenticate(@Valid @RequestBody LoginRequest request) {
         AuthResponse authResponse = authService.authenticate(request);
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
         ResponseCookie authCookie = ResponseCookie.from("PEBBLE_AUTH", authResponse.getToken())
                 .httpOnly(true)
                 .secure(secureCookie)
@@ -58,7 +62,10 @@ public class AuthController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, authCookie.toString())
-                .build();
+                .body(Map.of(
+                        "accountPendingDeletion", user.isDeletionPending(),
+                        "deletionScheduledAt", user.getDeletionScheduledAt() == null ? "" : user.getDeletionScheduledAt().toString()
+                ));
     }
 
 
