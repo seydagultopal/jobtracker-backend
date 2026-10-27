@@ -7,4 +7,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     Optional<User> findByGoogleSubject(String googleSubject);
+    java.util.List<User> findAllByDeletionScheduledAtLessThanEqual(java.time.LocalDateTime cutoff);
 }
