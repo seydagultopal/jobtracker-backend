@@ -69,6 +69,16 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean onboardingCompleted = true;
 
+    @Column(name = "deletion_requested_at")
+    private LocalDateTime deletionRequestedAt;
+
+    @Column(name = "deletion_scheduled_at")
+    private LocalDateTime deletionScheduledAt;
+
+    public boolean isDeletionPending() {
+        return deletionScheduledAt != null;
+    }
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
