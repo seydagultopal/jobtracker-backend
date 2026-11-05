@@ -54,6 +54,9 @@ public class User implements UserDetails {
     @Column(columnDefinition = "TEXT")
     private String educations;
 
+    @Column(columnDefinition = "TEXT")
+    private String languages;
+
     @Column(name = "auth_provider", nullable = false, length = 20)
     @Builder.Default
     private String authProvider = "LOCAL";
