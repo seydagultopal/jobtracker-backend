@@ -69,6 +69,7 @@ public class UserService {
         if (updatedData.getCoverPhoto() != null) existingUser.setCoverPhoto(updatedData.getCoverPhoto());
         if (updatedData.getExperiences() != null) existingUser.setExperiences(updatedData.getExperiences());
         if (updatedData.getEducations() != null) existingUser.setEducations(updatedData.getEducations());
+        if (updatedData.getLanguages() != null) existingUser.setLanguages(updatedData.getLanguages());
 
         return userRepository.save(existingUser);
     }
