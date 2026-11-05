@@ -19,6 +19,7 @@ public record UserProfileResponse(
         String coverPhoto,
         String experiences,
         String educations,
+        String languages,
         LocalDateTime createdAt
 ) {
     public static UserProfileResponse from(User user) {
@@ -39,6 +40,7 @@ public record UserProfileResponse(
                 user.getCoverPhoto(),
                 user.getExperiences(),
                 user.getEducations(),
+                user.getLanguages(),
                 user.getCreatedAt()
         );
     }
